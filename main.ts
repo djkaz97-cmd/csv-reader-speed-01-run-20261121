@@ -1,23 +1,24 @@
-// main.ts — csv-reader-speed-01-run-20261121 entry driver.
-// Reads every case from /input/cases.json, answers each with run() from
-// solve.js, writes /output/answers.json. Node 22, standard library only.
-// MAKEFUN_INPUT_DIR / MAKEFUN_OUTPUT_DIR stand in for /input and /output
-// outside the grader's container. V8 incremental marking off, as the house
-// baseline runs, set before solve.js is imported.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+// csv-reader-speed-01-run-20261121 entry driver.
+// Reads every case from /input/cases.json (MAKEFUN_INPUT_DIR outside a
+// container), answers each one with run() from solve.js and writes
+// /output/answers.json (MAKEFUN_OUTPUT_DIR outside a container).
+//
+// V8's incremental marking is turned off before solve.js is imported, so all
+// of its work runs under it (the house baseline runs with
+// --no-incremental-marking the same way).
+
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setFlagsFromString } from 'node:v8';
 
 setFlagsFromString('--no-incremental-marking');
 
-const { run } = (await import(new URL('./solve.js', import.meta.url).href)) as {
-  run: (input: unknown) => unknown;
-};
+const { run } = await import(new URL('./solve.js', import.meta.url).href);
 
-const inDir = process.env.MAKEFUN_INPUT_DIR ?? '/input';
-const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
-const cases = JSON.parse(readFileSync(join(inDir, 'cases.json'), 'utf8')) as { id: string; input: unknown }[];
-const answers: unknown[] = [];
+const INPUT_DIR = process.env.MAKEFUN_INPUT_DIR ?? '/input';
+const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+
+const cases = JSON.parse(readFileSync(join(INPUT_DIR, 'cases.json'), 'utf8'));
+const answers = [];
 for (const c of cases) answers.push(run(c.input));
-mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, 'answers.json'), JSON.stringify(answers));
+writeFileSync(join(OUTPUT_DIR, 'answers.json'), JSON.stringify(answers));
